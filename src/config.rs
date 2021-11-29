@@ -1,4 +1,16 @@
+
 pub mod api {
+    pub mod dsm {
+        use std::env;
+
+        pub fn connection_url() -> String {
+            match env::var("API_DSM_URL") {
+                Ok(url) => url,
+                _ => String::from("http://localhost:8118/v1/dsm"), // Default local odata url
+            }
+        }
+    }
+
     pub mod odata_inspections_v2 {
         use std::env;
 
