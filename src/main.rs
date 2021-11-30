@@ -9,8 +9,8 @@ use structopt::StructOpt;
 use uuid_5::Uuid;
 
 extern crate rand;
-// use rand::thread_rng;
-// use rand::Rng;
+use rand::thread_rng;
+use rand::Rng;
 
 use fake::{Dummy, Fake, Faker};
 // use fake::faker::name::en::*;
@@ -30,21 +30,18 @@ pub struct Opt {
     app_slugs: Vec<String>,
     /// Number data source that will be injected
     #[structopt(short = "l", long, name = "limit")]
-    dsm_limit: Option<usize>,
+    dsm_limit: Option<i32>,
 }
 
-#[derive(Debug, Dummy)]
+#[derive(Serialize, Debug)]
 pub struct DataSourceEntity {
-    id: String,
-    tier: Option<String>,
-    parent: Option<String>,
-    #[dummy(faker = "Buzzword()")]
+    tier_id: Uuid,
+    parent_id: Option<Uuid>,
+    // #[dummy(faker = "Buzzword()")]
     name: String,
-    #[dummy(faker = "CatchPhase()")]
+    // #[dummy(faker = "CatchPhase()")]
     notes: Option<String>,
     status: EntityStatus,
-    created_at: DateTime<Utc>,
-    updated_at: DateTime<Utc>,
 }
 
 #[derive(Serialize, Debug, Dummy)]
@@ -95,17 +92,53 @@ impl AssetStatus {
     }
 }
 
-async fn process(opt: &Opt) {
+async fn process(opt: &Opt, token: String) {
     println!("APP STATED: {:?}", &opt.app_slugs);
     println!("DSM STATED: {:?}", &opt.dsm_limit);
     println!("number of appslugs: {:?}", &opt.app_slugs.len());
+    // Set limit for dsm
+    let limit;
+    match opt.dsm_limit {
+        Some(val) => {
+            if val > 1 {
+                limit = opt.dsm_limit.unwrap();
+            } else {
+                println!("{}", "Invalid dsm limit. Will default to 10".yellow());
+                // need refactor
+                limit = 10;
+            }
+        }
+        _ => limit = 10,
+    };
+    // Random number generator
+    let mut rng = thread_rng();
+
+    // Create dsm for each app
     for app in 0..opt.app_slugs.len() {
         println!("APP: {:?}", &opt.app_slugs[app]);
-        let fetched_tiers = tiers(&opt.app_slugs[app]).await;
+        // Get number of tiers
+        let fetched_tiers = tiers(&opt.app_slugs[app], token.clone()).await;
         println!("number of tiers: {:?}", fetched_tiers.tiers.len());
+        // Create Entities for each tiers
         for tier in 0..fetched_tiers.tiers.len() {
-            let fake_dse: DataSourceEntity = Faker.fake();
-            println!("DSE {:?}: {:?}", tier, fake_dse);
+            let rand_num_asset: i32 = rng.gen_range(1..limit);
+            println!("RANDOM Number: {:?}", rand_num_asset);
+            // Creating random number of entities for tier
+            for asset in 0..rand_num_asset {
+                println!("Asset #{:?}", asset);
+                let fake_dse: DataSourceEntity = DataSourceEntity {
+                    tier_id: fetched_tiers.tiers[tier].id,
+                    parent_id: fetched_tiers.tiers[tier].parent_id,
+                    name: Buzzword().fake(),
+                    notes: CatchPhase().fake(),
+                    status: Faker.fake::<EntityStatus>(),
+                };
+                println!("TIER DATA: {:?}", fetched_tiers.tiers[tier]);
+                println!("DSE for tier - {:?}: {:?}", tier, fake_dse);
+
+                // post entity
+                post_entity(&opt.app_slugs[app], fake_dse, token.clone()).await;
+            }
         }
     }
     // Connect to app
@@ -129,15 +162,9 @@ pub struct FetchResult {
     pub tiers: Vec<AssetRecord>,
 }
 
-pub async fn tiers(app_slug: &str) -> FetchResult {
+pub async fn tiers(app_slug: &str, token: String) -> FetchResult {
     let hostname = config::api::dsm::connection_url();
     let url = format!("{}/v1/{}/tiers?", hostname, app_slug);
-    let token;
-    match std::env::var("BEARER_TOKEN") {
-        Ok(val) => token = val,
-        Err(_e) => token = "".to_string(),
-    }
-    println!("TOKEN {:?}", token);
     let client = reqwest::Client::new();
     let response = client.get(&url).bearer_auth(token).send().await.unwrap();
 
@@ -147,15 +174,40 @@ pub async fn tiers(app_slug: &str) -> FetchResult {
     } else {
         json_response = FetchResult { tiers: Vec::new() };
     }
-
-    println!("RESPONSE: {:?}", &json_response);
     json_response
+}
+
+pub async fn post_entity(app_slug: &str, fake_dse: DataSourceEntity, token: String) {
+    println!("TOKEN {:?}", token);
+    let hostname = config::api::dsm::connection_url();
+    let url = format!("{}/v1/{}/assets", hostname, app_slug);
+    println!("URL: {:?}", url);
+    let client = reqwest::Client::new();
+    let response = client
+        .post(&url)
+        .bearer_auth(token)
+        .json(&fake_dse)
+        .send()
+        .await
+        .unwrap();
+
+    println!("post entity status: {:?}", response.status());
+}
+
+fn get_token() -> String {
+    let token;
+    match std::env::var("BEARER_TOKEN") {
+        Ok(val) => token = val,
+        Err(_e) => token = "".to_string(),
+    }
+    token
 }
 
 #[tokio::main]
 async fn main() {
+    let token = get_token();
     let opt = Opt::from_args();
-    process(&opt).await;
+    process(&opt, token).await;
 
     println!("{}", "Finished!".green());
 }
