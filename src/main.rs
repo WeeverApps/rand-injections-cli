@@ -1,10 +1,10 @@
 // use crate::config::api::dsm::connection_url;
 mod config;
-use structopt::StructOpt;
-use colored::Colorize;
-use serde::{Serialize, Deserialize};
-use std::str::FromStr;
 use chrono::{offset::Utc, DateTime};
+use colored::Colorize;
+use serde::{Deserialize, Serialize};
+use std::str::FromStr;
+use structopt::StructOpt;
 // use uuid_5::Uuid;
 use uuid_5::Uuid;
 
@@ -20,12 +20,8 @@ use fake::faker::company::en::*;
 // use rand::rngs::StdRng;
 // use rand::SeedableRng;
 
-// use rocket::request::Request;
-#[macro_use] extern crate rocket;
-use rocket::{get, routes, Build};
-use rocket::local::asynchronous::Client;
-// use rocket::response::{self, Response, Responder};
-
+use actix_web::{get, post, web, HttpRequest, HttpResponse, Responder};
+use serde_json::{json, Value as JsonValue};
 #[derive(Debug, StructOpt)]
 #[structopt()]
 pub struct Opt {
@@ -70,10 +66,9 @@ impl FromStr for EntityStatus {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AssetRecord {
     app_slug: String,
-    tier_id: Uuid,
     parent_id: Option<Uuid>,
     id: Uuid,
     name: String,
@@ -100,50 +95,67 @@ impl AssetStatus {
     }
 }
 
-async fn process(opt: &Opt){
-    println!("APP STATED: {:?}",&opt.app_slugs);
-    println!("DSM STATED: {:?}",&opt.dsm_limit);
-    let fake_Dse: DataSourceEntity = Faker.fake();
-    println!("DSE: {:?}", fake_Dse);
+async fn process(opt: &Opt) {
+    println!("APP STATED: {:?}", &opt.app_slugs);
+    println!("DSM STATED: {:?}", &opt.dsm_limit);
+    println!("number of appslugs: {:?}", &opt.app_slugs.len());
+    for app in 0..opt.app_slugs.len() {
+        println!("APP: {:?}", &opt.app_slugs[app]);
+        let fetched_tiers = tiers(&opt.app_slugs[app]).await;
+        println!("number of tiers: {:?}", fetched_tiers.tiers.len());
+        for tier in 0..fetched_tiers.tiers.len() {
+            let fake_dse: DataSourceEntity = Faker.fake();
+            println!("DSE {:?}: {:?}", tier, fake_dse);
+        }
+    }
     // Connect to app
-    // GET num of levels this app has for dsm 
-        // "/<app_slug>/assets?<asset_id>&<parent_asset_id>&<tier_id>&<top_level_assets>"
+    // GET num of levels this app has for dsm
+    // "/<app_slug>/assets?<asset_id>&<parent_asset_id>&<tier_id>&<top_level_assets>"
     // loop the num of levels
-        // POST: 
-        // set random number of assets for this level
-            /*let mut rng = thread_rng();
-            let y: f64 = rng.gen_range(-10.0, 10.0);
-            let rand_num_asset: i32 = rng.gen_range(1, 10);
-            println!("RANDOM Number: {:?}", rand_num_asset);
-            */
-        // create random data
-        // make request.
-
+    // POST:
+    // set random number of assets for this level
+    /*let mut rng = thread_rng();
+    let y: f64 = rng.gen_range(-10.0, 10.0);
+    let rand_num_asset: i32 = rng.gen_range(1, 10);
+    println!("RANDOM Number: {:?}", rand_num_asset);
+    */
+    // create random data
+    // make request.
 }
 
-#[get("/tiers/<app_slug>")]
-pub async fn tiers(app_slug: &str) -> (){
-    // let app_slug = "mars-clv";
+#[derive(Deserialize, Serialize, Debug)]
+pub struct FetchResult {
+    #[serde(alias = "records")]
+    pub tiers: Vec<AssetRecord>,
+}
+
+pub async fn tiers(app_slug: &str) -> FetchResult {
     let hostname = config::api::dsm::connection_url();
-    let url = format!("{}/v1/{}/tiers?",
-    hostname, app_slug);
-    let token = std::env::var("BEARER_TOKEN");
-    
-    let client = Client::tracked(rocket()).await.expect("valid rocket");
-    let response = client.get(&url).dispatch();
-    println!("STATUS: {:?}", response.await.status());
+    let url = format!("{}/v1/{}/tiers?", hostname, app_slug);
+    let token;
+    match std::env::var("BEARER_TOKEN") {
+        Ok(val) => token = val,
+        Err(_e) => token = "".to_string(),
+    }
+    println!("TOKEN {:?}", token);
+    let client = reqwest::Client::new();
+    let response = client.get(&url).bearer_auth(token).send().await.unwrap();
+
+    let json_response;
+    if response.status().is_success() {
+        json_response = response.json::<FetchResult>().await.unwrap();
+    } else {
+        json_response = FetchResult { tiers: Vec::new() };
+    }
+
+    println!("RESPONSE: {:?}", &json_response);
+    json_response
 }
 
-fn rocket() -> rocket::Rocket<Build> {
-    rocket::build().mount("/", routes![tiers])
-}
-
-#[rocket::main]
+#[tokio::main]
 async fn main() {
-    rocket().launch().await;
     let opt = Opt::from_args();
     process(&opt).await;
 
     println!("{}", "Finished!".green());
-
 }
