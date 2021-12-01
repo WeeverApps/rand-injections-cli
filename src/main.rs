@@ -62,25 +62,25 @@ impl FromStr for EntityStatus {
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AssetRecord {
+pub struct TierRecord {
     app_slug: String,
     parent_id: Option<Uuid>,
     id: Uuid,
     name: String,
     note: Option<String>,
-    status: AssetStatus,
+    status: TierStatus,
     created_at: DateTime<Utc>,
     updated_at: Option<DateTime<Utc>>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
-pub enum AssetStatus {
+pub enum TierStatus {
     Published,
     Disabled,
 }
 
-impl AssetStatus {
+impl TierStatus {
     pub fn from(text: &String) -> Self {
         match text.as_str() {
             "published" => Self::Published,
@@ -157,7 +157,7 @@ async fn process(opt: &Opt, token: String) {
 #[derive(Deserialize, Serialize, Debug)]
 pub struct FetchResult {
     #[serde(alias = "records")]
-    pub tiers: Vec<AssetRecord>,
+    pub tiers: Vec<TierRecord>,
 }
 
 pub async fn tiers(app_slug: &str, token: String) -> FetchResult {
