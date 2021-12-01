@@ -37,10 +37,8 @@ pub struct Opt {
 pub struct DataSourceEntity {
     tier_id: Uuid,
     parent_id: Option<Uuid>,
-    // #[dummy(faker = "Buzzword()")]
     name: String,
-    // #[dummy(faker = "CatchPhase()")]
-    notes: Option<String>,
+    note: Option<String>,
     status: EntityStatus,
 }
 
@@ -130,7 +128,7 @@ async fn process(opt: &Opt, token: String) {
                     tier_id: fetched_tiers.tiers[tier].id,
                     parent_id: fetched_tiers.tiers[tier].parent_id,
                     name: Buzzword().fake(),
-                    notes: CatchPhase().fake(),
+                    note: CatchPhase().fake(),
                     status: Faker.fake::<EntityStatus>(),
                 };
                 println!("TIER DATA: {:?}", fetched_tiers.tiers[tier]);
