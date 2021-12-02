@@ -22,6 +22,8 @@ use fake::faker::company::en::*;
 
 // use actix_web::{get, post, web, HttpRequest, HttpResponse, Responder};
 use serde_json::{json, Value as JsonValue};
+
+use std::{thread, time};
 #[derive(Debug, StructOpt)]
 #[structopt()]
 pub struct Opt {
@@ -129,30 +131,53 @@ async fn process(opt: &Opt, token: String) {
                 note: CatchPhase().fake(),
                 status: Faker.fake::<EntityStatus>(),
             };
+            println!("TOP ----- TIER DATA: {:?}", fetched_tiers.tiers[0]);
+            println!("TOP ----- DSE for tier - {:?}: {:?}", 0, fake_dse);
             // post entity
             post_entity(&opt.app_slugs[app], vec![fake_dse], token.clone()).await;
         }
 
+        let post_delay = time::Duration::from_millis(100000);
+        let now = time::Instant::now();
+        thread::sleep(post_delay);
+        assert!(now.elapsed() >= post_delay);
+        println!("\n\n");
+
         // Create Entities for each tiers after top tier.
         for tier in 1..fetched_tiers.tiers.len() {
+            // println!("TIER {:?}", tier);
+            println!(
+                "{:?} ON TIER @@@@@@ {:?}",
+                tier,
+                fetched_tiers.tiers[tier - 1]
+            );
+            println!(
+                "{:?} ON TIER ID @@@@@@ {:?}",
+                tier,
+                fetched_tiers.tiers[tier - 1].id
+            );
             let rand_num_asset: i32 = rng.gen_range(1..limit);
-            println!("RANDOM Number: {:?}", rand_num_asset);
-            // Get Assets in this tier.
+            println!("\n\nRANDOM CHILD ASSET: {:?}", rand_num_asset);
+            // Get entities in the tier before to set up as parents
             let entities = get_entities(
                 &opt.app_slugs[app],
                 token.clone(),
                 fetched_tiers.tiers[tier - 1].id,
             )
             .await;
-            // println!("Entities: {:?}", entities);
+            println!(
+                "TOTAL: {:?} \nFETCH Entities: {:?}",
+                entities.assets.len(),
+                entities
+            );
 
             // For every entity this tier has, randomly generate more child entities.
             for entity in entities.assets {
-                println!("Entity --------- {:?} ", entity.id);
+                println!("\n\nEntity --------- {:?} ", entity.id);
                 // Creating random number of entities for tier
 
                 for rand_asset in 0..rand_num_asset {
-                    println!("Rand Asset #{:?}", rand_asset);
+                    println!("\n\nRand Asset #{:?}", rand_asset);
                     let fake_dse = DataSourceEntity {
                         tier_id: fetched_tiers.tiers[tier].id,
                         parent_id: Some(entity.id),
@@ -208,12 +233,14 @@ pub async fn tiers(app_slug: &str, token: String) -> TiersResult {
     } else {
         json_response = TiersResult { tiers: Vec::new() };
     }
+    println!("TIER RESPONSE {:?}", json_response);
     json_response
 }
 
 pub async fn get_entities(app_slug: &str, token: String, tier_id: Uuid) -> EntitiesResult {
+    println!("GET ENTITIES where TIER ID: {:?}", tier_id);
     let hostname = config::api::dsm::connection_url();
-    let url = format!("{}/v1/{}/assets?tier_id{}", hostname, app_slug, tier_id);
+    let url = format!("{}/v1/{}/assets?tier_id={}", hostname, app_slug, tier_id);
     let client = reqwest::Client::new();
     let response = client.get(&url).bearer_auth(token).send().await.unwrap();
 
