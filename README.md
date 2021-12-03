@@ -7,9 +7,9 @@ View list of commands - under `OPTIONS`:
 `./target/debug/mock_injections --help`
 
 Example:
-`./target/debug/mock_injections -a "qa-inspections-manager" -l 5`
+`./target/debug/mock_injections -a "qa-inspections-manager" --dsm-limit 5`
 
 - Single app slug
-  `cargo run -- -a "qa-inspections-manager" -l 5`
+  `cargo run -- -a "qa-inspections-manager" --dsm-limit 15`
 - Multiple app slugs
-  `cargo run -- -a "qa-inspections-manager" "mars-clv" -l 5`
+  `cargo run -- -a "mars-vic" "mars-ark" --dsm-limit 10`
