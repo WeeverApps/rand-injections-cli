@@ -61,17 +61,8 @@ fn get_access_token() -> Option<String> {
 }
 
 fn main() {
-
     // fetch a fresh login token and save it to the environment
     if let Some(token) = get_access_token() {
-        // std::env::set_var("BEARER_TOKEN", &token);
-        // let bearer_token_env = std::env::var("BEARER_TOKEN");
-        // println!(" Token is {}", bearer_token_env.unwrap());
-        // if bearer_token_env.is_ok(){
-        //     println!("Bearer Token is {}", bearer_token_env.unwrap());
-        // }  else {
-        //     println!("Env var not found");
-        // }
         println!("cargo:rustc-env=BEARER_TOKEN={token}", token = &token);
         println!("cargo:warning=Setting BEARER_TOKEN={token}", token = &token);
     }
