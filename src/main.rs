@@ -10,13 +10,8 @@ extern crate rand;
 use rand::thread_rng;
 use rand::Rng;
 
-use fake::{Dummy, Fake, Faker};
-// use fake::faker::name::en::*;
 use fake::faker::company::en::*;
-// use fake::faker::chrono::raw::*;
-// use fake::uuid::*;
-// use rand::rngs::StdRng;
-// use rand::SeedableRng;
+use fake::{Dummy, Fake, Faker};
 
 use std::{thread, time};
 #[derive(Debug, StructOpt)]
