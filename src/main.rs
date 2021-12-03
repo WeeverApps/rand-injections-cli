@@ -22,10 +22,10 @@ use std::{thread, time};
 #[derive(Debug, StructOpt)]
 #[structopt()]
 pub struct Opt {
-    /// Limit scan to given applications. App name(s) that will receive injections
+    /// Limit scan to given applications. App name(s) that will receive injections.
     #[structopt(short, long = "app-slug", name = "slug")]
     app_slugs: Vec<String>,
-    /// Number data source that will be injected
+    /// Number data source that will be injected. Number needs to be bigger than 1.
     #[structopt(short = "l", long, name = "limit")]
     dsm_limit: Option<i32>,
 }
@@ -88,22 +88,17 @@ impl TierStatus {
 }
 
 async fn process(opt: &Opt, token: String) {
-    println!("APP STATED: {:?}", &opt.app_slugs);
-    println!("DSM STATED: {:?}", &opt.dsm_limit);
-    println!("number of appslugs: {:?}", &opt.app_slugs.len());
     // Set limit for dsm
-    let limit;
-    match opt.dsm_limit {
+    let limit = match opt.dsm_limit {
         Some(val) => {
             if val > 1 {
-                limit = opt.dsm_limit.unwrap();
+                opt.dsm_limit.unwrap()
             } else {
                 println!("{}", "Invalid dsm limit. Will default to 10".yellow());
-                // need refactor
-                limit = 10;
+                10
             }
         }
-        _ => limit = 10,
+        _ => 10,
     };
     // Random number generator
     let mut rng = thread_rng();
@@ -113,11 +108,9 @@ async fn process(opt: &Opt, token: String) {
         println!("APP: {:?}", &opt.app_slugs[app]);
         // Get number of tiers
         let fetched_tiers = tiers(&opt.app_slugs[app], token.clone()).await;
-        println!("number of tiers: {:?}", fetched_tiers.tiers.len());
 
         // Create Entities for top tier in case there isn't any.
-        let rand_num_asset: i32 = rng.gen_range(1..limit);
-        println!("RANDOM Number: {:?}", rand_num_asset);
+        let mut rand_num_asset: i32 = rng.gen_range(1..limit);
         for _asset in 0..rand_num_asset {
             let fake_dse = DataSourceEntity {
                 tier_id: fetched_tiers.tiers[0].id,
@@ -126,30 +119,19 @@ async fn process(opt: &Opt, token: String) {
                 note: CatchPhase().fake(),
                 status: Faker.fake::<EntityStatus>(),
             };
-            println!("TOP ----- TIER DATA: {:?}", fetched_tiers.tiers[0]);
-            println!("TOP ----- DSE for tier - {:?}: {:?}", 0, fake_dse);
             // post entity
             post_entity(&opt.app_slugs[app], vec![fake_dse], token.clone()).await;
         }
 
-        println!("POST DELAY 30 secs...\n\n");
+        println!(
+            "CREATING {:?} entities for top tier...(30 secs)",
+            rand_num_asset
+        );
         let post_delay = time::Duration::from_millis(30000);
         thread::sleep(post_delay);
 
         // Create Entities for each tiers after top tier.
         for tier in 1..fetched_tiers.tiers.len() {
-            // println!("TIER {:?}", tier);
-            println!(
-                "{:?} ON TIER @@@@@@ {:?}",
-                tier,
-                fetched_tiers.tiers[tier - 1]
-            );
-            println!(
-                "{:?} ON TIER ID @@@@@@ {:?}",
-                tier,
-                fetched_tiers.tiers[tier - 1].id
-            );
-
             // Get entities in the tier before to set up as parents
             let entities = get_entities(
                 &opt.app_slugs[app],
@@ -157,21 +139,13 @@ async fn process(opt: &Opt, token: String) {
                 fetched_tiers.tiers[tier - 1].id,
             )
             .await;
-            println!(
-                "TOTAL: {:?} \nFETCH Entities: {:?}",
-                entities.assets.len(),
-                entities
-            );
 
             // For every entity this tier has, randomly generate more child entities.
             for entity in entities.assets {
-                println!("\n\nEntity --------- {:?} ", entity.id);
                 // Creating random number of entities for tier
-                let rand_num_asset: i32 = rng.gen_range(1..limit);
-                println!("\n\nRANDOM CHILD ASSET: {:?}", rand_num_asset);
+                rand_num_asset = rng.gen_range(1..limit);
 
-                for rand_asset in 0..rand_num_asset {
-                    println!("\n\nRand Asset #{:?}", rand_asset);
+                for _rand_asset in 0..rand_num_asset {
                     let fake_dse = DataSourceEntity {
                         tier_id: fetched_tiers.tiers[tier].id,
                         parent_id: Some(entity.id),
@@ -179,15 +153,15 @@ async fn process(opt: &Opt, token: String) {
                         note: CatchPhase().fake(),
                         status: Faker.fake::<EntityStatus>(),
                     };
-                    println!("{:?} TIER DATA: {:?}", tier, fetched_tiers.tiers[tier].id);
-                    println!("{:?} DSE for tier: {:?}", tier, fake_dse);
-
                     // post entity
                     post_entity(&opt.app_slugs[app], vec![fake_dse], token.clone()).await;
                 }
             }
             // Need delay between each entity creation in a tier
-            println!("POST DELAY 30 secs...\n\n");
+            println!(
+                "\nCREATING {:?} entities for tier {:?}...(30 secs)",
+                rand_num_asset, tier
+            );
             let post_delay = time::Duration::from_millis(30000);
             thread::sleep(post_delay);
         }
@@ -231,12 +205,10 @@ pub async fn tiers(app_slug: &str, token: String) -> TiersResult {
     } else {
         json_response = TiersResult { tiers: Vec::new() };
     }
-    println!("TIER RESPONSE {:?}", json_response);
     json_response
 }
 
 pub async fn get_entities(app_slug: &str, token: String, tier_id: Uuid) -> EntitiesResult {
-    println!("GET ENTITIES where TIER ID: {:?}", tier_id);
     let hostname = config::api::dsm::connection_url();
     let url = format!("{}/v1/{}/assets?tier_id={}", hostname, app_slug, tier_id);
     let client = reqwest::Client::new();
@@ -265,17 +237,16 @@ pub async fn post_entity(app_slug: &str, fake_dse: Vec<DataSourceEntity>, token:
         .await
         .unwrap();
 
-    println!("post entity status: {:?}", response.status());
-    println!("post entity response: {:?}", response);
+    if !response.status().is_success() {
+        println!("{:?}", "ERROR: Issue with post entity".red());
+    }
 }
 
 fn get_token() -> String {
-    let token;
     match std::env::var("BEARER_TOKEN") {
-        Ok(val) => token = val,
-        Err(_e) => token = "".to_string(),
+        Ok(val) => val,
+        Err(_) => "".to_string(),
     }
-    token
 }
 
 #[tokio::main]
