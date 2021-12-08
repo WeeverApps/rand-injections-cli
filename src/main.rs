@@ -2,16 +2,8 @@ mod config;
 use colored::Colorize;
 use structopt::StructOpt;
 
-extern crate rand;
-// use rand::thread_rng;
-// use rand::Rng;
-
-// use fake::faker::company::en::*;
-// use fake::{Fake, Faker};
-
-// use std::{thread, time};
-
 mod dsm;
+mod inspection_builder;
 #[derive(Debug, StructOpt)]
 #[structopt()]
 pub struct Opt {
@@ -34,14 +26,36 @@ async fn process(opt: &Opt, token: String) {
         Some(val) => {
             // TO DO: app slugs could be Empty. Need error handle
             if val > 1 {
-                dsm::create_dsm(opt.dsm_limit.unwrap(), opt.app_slugs.clone(), token).await;
+                dsm::create_dsm(opt.dsm_limit.unwrap(), opt.app_slugs.clone(), token.clone()).await;
             } else {
                 println!("{}", "Invalid dsm limit. Will default to 10".yellow());
-                dsm::create_dsm(10, opt.app_slugs.clone(), token).await;
+                dsm::create_dsm(10, opt.app_slugs.clone(), token.clone()).await;
             }
         }
         None => {}
     };
+    match opt.ib_limit {
+        Some(val) => {
+            // TO DO: app slugs could be Empty. Need error handle
+            if val > 1 {
+                inspection_builder::create_inspection_builder(
+                    opt.ib_limit.unwrap(),
+                    opt.app_slugs.clone(),
+                    token.clone(),
+                )
+                .await;
+            } else {
+                println!("{}", "Invalid dsm limit. Will default to 10".yellow());
+                inspection_builder::create_inspection_builder(
+                    10,
+                    opt.app_slugs.clone(),
+                    token.clone(),
+                )
+                .await;
+            }
+        }
+        None => {}
+    }
 }
 
 fn get_token() -> String {

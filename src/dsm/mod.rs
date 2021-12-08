@@ -48,13 +48,26 @@ pub async fn create_dsm(limit: i32, app_slugs: Vec<String>, token: String) {
         // Create Entities for each tiers after top tier.
         for tier in 1..fetched_tiers.tiers.len() {
             // Get entities in the tier before to set up as parents
-            let entities = entity::get_entities(
+            let mut entities = entity::get_entities(
                 &app_slugs[app],
                 token.clone(),
                 fetched_tiers.tiers[tier - 1].id,
             )
             .await;
-
+            if entities.assets.len() <= 0 {
+                println!("Couldn't find any entities.");
+                // Need delay between each entity creation in a tier
+                println!("Another POST delay...(30 secs)\n");
+                let post_delay = time::Duration::from_millis(30000);
+                thread::sleep(post_delay);
+                // Get entities in the tier before to set up as parents
+                entities = entity::get_entities(
+                    &app_slugs[app],
+                    token.clone(),
+                    fetched_tiers.tiers[tier - 1].id,
+                )
+                .await;
+            }
             // For every entity this tier has, randomly generate more child entities.
             for entity in entities.assets {
                 // Creating random number of entities for tier
