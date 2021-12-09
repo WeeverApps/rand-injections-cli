@@ -83,9 +83,17 @@ pub async fn create_inspection_builder(limit: i32, app_slugs: Vec<String>, token
             rand_num = 0;
         }
         println!("RAND NUM {:?}", rand_num);
-        let rand_inspection_type = fetch_inspection_types.inspection_types[rand_num].clone();
+        if fetch_inspection_types.inspection_types.len() > 1 {
+            let rand_inspection_type = fetch_inspection_types.inspection_types[rand_num].clone();
+            println!("rand_inspection_type {:?}", rand_inspection_type);
+        } else {
+            println!(
+                "Inspection type: {:?}",
+                fetch_inspection_types.inspection_types
+            );
+            // TODO: create and fetch. Assuming you already have some.
+        }
 
-        println!("rand_inspection_type {:?}", rand_inspection_type);
         // get inspection form by app
         let inspection_forms = inspection_form::fetch(&app_slugs[app], token.clone()).await;
         println!("INSPECTION FORMS: {:?}", inspection_forms);

@@ -102,7 +102,7 @@ pub struct Attributes {
     required: Option<bool>,
     placeholder: Option<String>,
 }
-pub async fn fetch(app_slug: &str, token: String) -> Form {
+pub async fn fetch(app_slug: &str, token: String) -> Vec<Form> {
     let categories = form_categories(app_slug, token.clone()).await;
     let category_id: String = categories
         .message
@@ -126,23 +126,25 @@ pub async fn fetch(app_slug: &str, token: String) -> Form {
 
     let client = reqwest::Client::new();
     let response = client.get(&url).bearer_auth(token).send().await.unwrap();
-
-    let mut json_response = Form {
-        url: "TEST URL".to_string(),
-        name: "TEST NAME".to_string(),
-        uuid: "TEST UUID".to_string(),
-        app_id: "TEST APP ID".to_string(),
-        images: None,
-        status: "TEST STATUS".to_string(),
-        action: None,
-        authors: Name().fake(),
-        details: None,
-        __weever: None,
-        datetime: None,
-    };
+    println!("RESPONSE: {:?}", response);
+    let json_response;
 
     if response.status().is_success() {
-        json_response = response.json::<Form>().await.unwrap();
+        json_response = response.json::<Vec<Form>>().await.unwrap();
+    } else {
+        json_response = vec![Form {
+            url: "TEST URL".to_string(),
+            name: "TEST NAME".to_string(),
+            uuid: "TEST UUID".to_string(),
+            app_id: "TEST APP ID".to_string(),
+            images: None,
+            status: "TEST STATUS".to_string(),
+            action: None,
+            authors: Name().fake(),
+            details: None,
+            __weever: None,
+            datetime: None,
+        }];
     }
     json_response
 }

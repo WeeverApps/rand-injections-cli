@@ -56,3 +56,24 @@ pub async fn fetch(app_slug: &str, token: String) -> FetchResult {
     }
     json_response
 }
+
+// TODO - If there isn't any inspection types to create one.
+/*
+pub async fn create(app_slug: &str, token: String, fake_inspection_type: Vec<_>) {
+    let url = format!("{}/v1/{}/inspection-types", inspections_v2_url(), app_slug);
+
+    let client = reqwest::Client::new();
+
+    let response = client
+        .post(&url)
+        .bearer_auth(token)
+        .json(&fake_inspection_type)
+        .send()
+        .await
+        .unwrap();
+
+    if !response.status().is_success() {
+        println!("{:?}", "ERROR: Issue with post inspection type".red());
+    }
+}
+*/
