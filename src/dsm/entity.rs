@@ -54,7 +54,7 @@ pub struct EntityRecord {
 }
 
 pub async fn get_entities(app_slug: &str, token: String, tier_id: Uuid) -> EntitiesResult {
-    let url = format!("{}/v1/{}/assets?tier_id{}", dsm_url(), app_slug, tier_id);
+    let url = format!("{}/v1/{}/assets?tier_id={}", dsm_url(), app_slug, tier_id);
     let client = reqwest::Client::new();
     let response = client.get(&url).bearer_auth(token).send().await.unwrap();
 
