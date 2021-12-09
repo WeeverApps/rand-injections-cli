@@ -7,7 +7,7 @@ use fake::{Dummy, Fake, Faker};
 use serde::{Deserialize, Serialize};
 use uuid_5::Uuid;
 
-#[derive(Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Form {
     url: String,
@@ -23,19 +23,19 @@ pub struct Form {
     datetime: Option<Datetime>,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Weever {
     synced: Option<bool>,
     __synced: Option<bool>,
     timestamps: Timestamps,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Timestamps {
     updated: Updated,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Updated {
     json: Option<String>,
@@ -43,18 +43,18 @@ pub struct Updated {
     to_string: Option<String>,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Datetime {
     created: i64,
     updated: i64,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Details {
     properties: WxConfig,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WxConfig {
     wx_config: FormData,
@@ -64,7 +64,7 @@ pub struct WxConfig {
     most_recent_submission: Option<String>,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FormData {
     title: String,
@@ -76,12 +76,12 @@ pub struct FormData {
     assignee_sidebar_user_types: Option<String>,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Message {
     message: String,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FormElements {
     uuid: String,
@@ -94,7 +94,7 @@ pub struct FormElements {
     can_edit_label: Option<bool>,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Attributes {
     name: Option<String>,

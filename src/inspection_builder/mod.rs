@@ -84,9 +84,11 @@ pub async fn create_inspection_builder(limit: i32, app_slugs: Vec<String>, token
         }
         println!("RAND NUM {:?}", rand_num);
         let rand_inspection_type = fetch_inspection_types.inspection_types[rand_num].clone();
-        println!("rand_inspection_type {:?}", rand_num);
+
+        println!("rand_inspection_type {:?}", rand_inspection_type);
         // get inspection form by app
-        inspection_form::fetch(&app_slugs[app], token.clone()).await;
+        let inspection_forms = inspection_form::fetch(&app_slugs[app], token.clone()).await;
+        println!("INSPECTION FORMS: {:?}", inspection_forms);
         // inspection_form::form_categories(&app_slugs[app], token.clone()).await;
         // get dsm by app
         // get shift by app
