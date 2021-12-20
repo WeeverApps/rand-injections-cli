@@ -1,3 +1,11 @@
+# Summary:
+
+This is a tool developers can use to generate small or large amounts of random fake data to test out the performance of api-odata and wx-data-agent on it's endpoints.
+
+# Given:
+
+None, does not need anything else running. To see the data that you create with this tool can see it in DB or in a local environment.
+
 # Commands:
 
 ## Run CLI:
