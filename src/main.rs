@@ -3,7 +3,10 @@ use colored::Colorize;
 use structopt::StructOpt;
 
 mod dsm;
+mod frequency;
 mod inspection_builder;
+mod shift;
+mod user;
 #[derive(Debug, StructOpt)]
 #[structopt()]
 pub struct Opt {

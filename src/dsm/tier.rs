@@ -29,7 +29,6 @@ pub struct TiersResult {
     pub tiers: Vec<TierRecord>,
 }
 pub async fn tiers(app_slug: &str, token: String) -> TiersResult {
-    // let hostname = config::api::dsm::connection_url();
     let url = format!("{}/v1/{}/tiers", dsm_url(), app_slug);
     let client = reqwest::Client::new();
     let response = client.get(&url).bearer_auth(token).send().await.unwrap();

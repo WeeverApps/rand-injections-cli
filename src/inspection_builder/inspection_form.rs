@@ -3,6 +3,7 @@ use chrono::prelude::*;
 use chrono::{DateTime, NaiveDateTime, Utc};
 use fake::faker::company::en::*;
 use fake::faker::name::en::*;
+use fake::uuid::*;
 use fake::{Dummy, Fake, Faker};
 use serde::{Deserialize, Serialize};
 use uuid_5::Uuid;
@@ -12,7 +13,7 @@ use uuid_5::Uuid;
 pub struct Form {
     url: String,
     name: String,
-    uuid: String,
+    pub uuid: Uuid,
     app_id: String,
     images: Option<serde_json::Value>,
     status: String,
@@ -60,7 +61,7 @@ pub struct WxConfig {
     wx_config: FormData,
     category_id: String,
     category_name: String,
-    submission_count: i32,
+    submission_count: Option<i32>,
     most_recent_submission: Option<String>,
 }
 
@@ -115,7 +116,6 @@ pub async fn fetch(app_slug: &str, token: String) -> Vec<Form> {
             }
         })
         .collect();
-    println!("CATEGORY ID: {:?}", category_id);
 
     let url = format!(
         "{}/applications/{}/categories/forms/{}",
@@ -126,16 +126,17 @@ pub async fn fetch(app_slug: &str, token: String) -> Vec<Form> {
 
     let client = reqwest::Client::new();
     let response = client.get(&url).bearer_auth(token).send().await.unwrap();
-    println!("RESPONSE: {:?}", response);
+
     let json_response;
 
     if response.status().is_success() {
         json_response = response.json::<Vec<Form>>().await.unwrap();
     } else {
+        // Need to error out if no inspection form is found.
         json_response = vec![Form {
             url: "TEST URL".to_string(),
             name: "TEST NAME".to_string(),
-            uuid: "TEST UUID".to_string(),
+            uuid: Uuid::new_v4(),
             app_id: "TEST APP ID".to_string(),
             images: None,
             status: "TEST STATUS".to_string(),
