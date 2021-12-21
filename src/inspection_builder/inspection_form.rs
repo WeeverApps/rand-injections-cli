@@ -1,10 +1,6 @@
 use crate::config::api::platform::connection_url as platform_url;
-use chrono::prelude::*;
-use chrono::{DateTime, NaiveDateTime, Utc};
-use fake::faker::company::en::*;
-use fake::faker::name::en::*;
-use fake::uuid::*;
-use fake::{Dummy, Fake, Faker};
+use eyre::eyre;
+use eyre::Error;
 use serde::{Deserialize, Serialize};
 use uuid_5::Uuid;
 
@@ -103,7 +99,7 @@ pub struct Attributes {
     required: Option<bool>,
     placeholder: Option<String>,
 }
-pub async fn fetch(app_slug: &str, token: String) -> Vec<Form> {
+pub async fn fetch(app_slug: &str, token: String) -> Result<Vec<Form>, Error> {
     let categories = form_categories(app_slug, token.clone()).await;
     let category_id: String = categories
         .message
@@ -127,27 +123,11 @@ pub async fn fetch(app_slug: &str, token: String) -> Vec<Form> {
     let client = reqwest::Client::new();
     let response = client.get(&url).bearer_auth(token).send().await.unwrap();
 
-    let json_response;
-
     if response.status().is_success() {
-        json_response = response.json::<Vec<Form>>().await.unwrap();
+        Ok(response.json::<Vec<Form>>().await.unwrap())
     } else {
-        // Need to error out if no inspection form is found.
-        json_response = vec![Form {
-            url: "TEST URL".to_string(),
-            name: "TEST NAME".to_string(),
-            uuid: Uuid::new_v4(),
-            app_id: "TEST APP ID".to_string(),
-            images: None,
-            status: "TEST STATUS".to_string(),
-            action: None,
-            authors: Name().fake(),
-            details: None,
-            __weever: None,
-            datetime: None,
-        }];
+        Err(eyre!("ERROR: Form fetch was unsuccessful"))
     }
-    json_response
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -180,6 +160,5 @@ pub async fn form_categories(app_slug: &str, token: String) -> CategoriesResults
             message: Vec::new(),
         };
     }
-    println!("FORM CATEGORIES: {:?}", json_response);
     json_response
 }

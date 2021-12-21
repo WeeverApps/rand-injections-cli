@@ -23,7 +23,6 @@ pub struct Opt {
 
 async fn process(opt: &Opt, token: String) {
     // Check command type
-    println!("IB #: {:?}", opt.ib_limit);
     // Set limit for dsm
     match opt.dsm_limit {
         Some(val) => {
@@ -37,6 +36,7 @@ async fn process(opt: &Opt, token: String) {
         }
         None => {}
     };
+    // Set limit for inspection builder
     match opt.ib_limit {
         Some(val) => {
             // TO DO: app slugs could be Empty. Need error handle

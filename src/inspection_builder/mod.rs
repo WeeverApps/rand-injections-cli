@@ -90,13 +90,16 @@ pub async fn create_inspection_builder(limit: i32, app_slugs: Vec<String>, token
         }
 
         // get inspection forms by app
-        let inspection_forms = inspection_form::fetch(&app_slugs[app], token.clone()).await;
-        if inspection_forms.len() == 0 {
-            println!(
-                "{}",
-                "ERROR: There isn't any inspection forms for this app.".red()
-            );
-            break;
+        let form_results = inspection_form::fetch(&app_slugs[app], token.clone()).await;
+        let inspection_forms;
+        match form_results {
+            Ok(v) => {
+                inspection_forms = v;
+            }
+            Err(e) => {
+                println!("{}", e);
+                break;
+            }
         }
 
         // get dsm by app
@@ -198,8 +201,7 @@ pub async fn create_inspection_builder(limit: i32, app_slugs: Vec<String>, token
                 status: Some(Faker.fake::<ScheduleStatus>()),
             });
         }
-
-        println!("schedule: {:?}", fake_schedule);
+        println!("Created {} schedules", limit);
         inspections_command::service(
             token.clone(),
             app_slugs[app].clone(),

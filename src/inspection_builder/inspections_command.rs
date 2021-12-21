@@ -1,4 +1,5 @@
 use crate::config::api::inspections_v2::connection_url as inspections_v2_url;
+use colored::Colorize;
 use reqwest::Client;
 use serde::Serialize;
 use serde_json::json;
@@ -24,7 +25,9 @@ where
         .bearer_auth(token)
         .json(&json!({ "commands": commands }))
         .send()
-        .await;
-
-    println!("response: {:?}", response);
+        .await
+        .unwrap();
+    if !response.status().is_success() {
+        println!("{}", "ERROR: Failed to create schedules".red());
+    }
 }
