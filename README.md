@@ -21,9 +21,11 @@ View list of commands - under `OPTIONS`:
 
 - Single app slug
   `cargo run -- -a "qa-inspections-manager" --dsm-limit 15`
+  `cargo run --  -a "qa-inspections-manager"  --ib-limit 10` 
+  
 - Multiple app slugs
   `cargo run -- -a "mars-vic" "mars-ark" --dsm-limit 10`
-  `cargo run --  -a "qa-inspections-manager"  --ib-limit 1`  
+ 
 
 # Code description
 
