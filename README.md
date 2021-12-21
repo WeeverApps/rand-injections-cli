@@ -4,7 +4,7 @@ This is a tool developers can use to generate small or large amounts of random f
 
 # Given:
 
-None, does not need anything else running. To see the data that you create with this tool can see it in DB or in a local environment.
+None, does not need anything else running. To see the data that you created with this tool, you can see it in DB or in a local environment urls.
 
 # Commands:
 
@@ -23,6 +23,7 @@ View list of commands - under `OPTIONS`:
   `cargo run -- -a "qa-inspections-manager" --dsm-limit 15`
 - Multiple app slugs
   `cargo run -- -a "mars-vic" "mars-ark" --dsm-limit 10`
+  `cargo run --  -a "qa-inspections-manager"  --ib-limit 1`  
 
 # Code description
 
@@ -39,7 +40,7 @@ View list of commands - under `OPTIONS`:
    1. GET Inspection forms by app
    1. GET DSM by app
    1. GET Shift by app
-1. Random number between 1 to users's inspection builder limit number of inspections. Randomly set,
+1. Create the user input limit number of inspection builder. Randomly set,
    1. status
    1. frequency
    1. Assignee
