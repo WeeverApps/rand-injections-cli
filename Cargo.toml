@@ -2,18 +2,30 @@
 name = "mock_injections"
 version = "0.1.0"
 edition = "2018"
+build = "build.rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 tokio = { version = "1.14.0", features = ["full"]}
-reqwest = { version = "0.11", features = ["json", "blocking"] }
 futures = "0.3.18"
-serde = { version = "1.0.117", features = ["derive"] }
-serde_json = "1.0.59"
-rocket = { version = "0.5.0-rc.1" , features = ["secrets", "tls", "json"] }
+uuid-5 = { package = "uuid", version = "0.5.0", features = ["v4", "v5", "serde"] }  # needs to be v0.5 for postgres compatibility (for now)
+reqwest = { version = "0.11", features = ["json", "blocking"] }
+serde_json = "1.0.64"
+actix-web = "3"
+
+# Fake
 fake = { version = "2.4", features=['derive', 'chrono','uuid']}
 rand = "0.8"
-uuid = { version = "0.8.1", features = ["serde", "v4"] }
+
+# CLI
 structopt = { version = "0.3.25", default-features = false }
 colored = "2.0.0"
+
+# Parsing / Encoding / Types
+chrono = { version = "0.4.19", features = ["serde"] }
+serde = { version = "1.0.127", features = ["derive"] }
+
+[build-dependencies]
+reqwest = { version = "0.11", features = ["json", "blocking"] }
+serde_json = "1.0.64"
