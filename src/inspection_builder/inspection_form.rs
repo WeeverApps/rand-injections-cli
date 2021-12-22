@@ -151,14 +151,11 @@ pub async fn form_categories(app_slug: &str, token: String) -> CategoriesResults
     );
     let client = reqwest::Client::new();
     let response = client.get(&url).bearer_auth(token).send().await.unwrap();
-
-    let json_response;
     if response.status().is_success() {
-        json_response = response.json::<CategoriesResults>().await.unwrap();
+        response.json::<CategoriesResults>().await.unwrap()
     } else {
-        json_response = CategoriesResults {
+        CategoriesResults {
             message: Vec::new(),
-        };
+        }
     }
-    json_response
 }

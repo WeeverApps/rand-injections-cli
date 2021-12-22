@@ -5,6 +5,7 @@ use structopt::StructOpt;
 mod dsm;
 mod frequency;
 mod inspection_builder;
+mod running_schedule;
 mod shift;
 mod user;
 #[derive(Debug, StructOpt)]
@@ -19,6 +20,9 @@ pub struct Opt {
     /// Number inspection builder items that will be injected. Number needs to be bigger than 1.
     #[structopt(short = "ib-limit", long, name = "ibl")]
     ib_limit: Option<i32>,
+    /// Number running schedule items that will be scrambled. Number needs to be bigger than 1.
+    #[structopt(short = "rs-limit", long, name = "rsl")]
+    rs_limit: Option<i32>,
 }
 
 async fn process(opt: &Opt, token: String) {
@@ -48,13 +52,36 @@ async fn process(opt: &Opt, token: String) {
                 )
                 .await;
             } else {
-                println!("{}", "Invalid dsm limit. Will default to 10".yellow());
+                println!(
+                    "{}",
+                    "Invalid inspection builder limit. Will default to 10".yellow()
+                );
                 inspection_builder::create_inspection_builder(
                     10,
                     opt.app_slugs.clone(),
                     token.clone(),
                 )
                 .await;
+            }
+        }
+        None => {}
+    }
+    // Set scramble limit for running schedule.
+    match opt.rs_limit {
+        Some(val) => {
+            if val > 1 {
+                running_schedule::random_schedule(
+                    opt.rs_limit.unwrap(),
+                    opt.app_slugs.clone(),
+                    token.clone(),
+                )
+                .await;
+            } else {
+                println!(
+                    "{}",
+                    "Invalid running schedule limit. Will default to 10".yellow()
+                );
+                running_schedule::random_schedule(10, opt.app_slugs.clone(), token.clone()).await;
             }
         }
         None => {}

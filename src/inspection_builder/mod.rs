@@ -184,6 +184,12 @@ pub async fn create_inspection_builder(limit: i32, app_slugs: Vec<String>, token
             // Convert Faker random start date to naive date.
             let from_ymd = NaiveDate::from_ymd;
             let date = from_ymd(start_date.year(), start_date.month(), start_date.day());
+            
+            let mut frequency_day = None;
+            // Checks if the randomly selected frequency is Weekly to set day of the week only for it.
+            if frequency.id.to_string() == "9cca00be-caae-11eb-b286-87d80d211b78" {
+                frequency_day = Some(Faker.fake::<DayOfWeek>());
+            }
 
             fake_schedule.push(CreateScheduleCommand {
                 inspection_type_id: rand_inspection_type.id,
@@ -195,7 +201,7 @@ pub async fn create_inspection_builder(limit: i32, app_slugs: Vec<String>, token
                 frequency_id: Some(frequency.id),
                 frequency_amount: frequency.frequency_count as u32,
                 frequency_unit: frequency.frequency_unit,
-                frequency_day_of_week: Some(Faker.fake::<DayOfWeek>()),
+                frequency_day_of_week: frequency_day,
                 frequency_start_date: date,
                 note: Some(admin_note),
                 status: Some(Faker.fake::<ScheduleStatus>()),
