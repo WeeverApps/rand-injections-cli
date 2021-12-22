@@ -54,7 +54,6 @@ pub struct EntityRecord {
 }
 
 pub async fn get_entities(app_slug: &str, token: String, tier_id: Uuid) -> EntitiesResult {
-    // let hostname = config::api::dsm::connection_url();
     let url = format!("{}/v1/{}/assets?tier_id={}", dsm_url(), app_slug, tier_id);
     let client = reqwest::Client::new();
     let response = client.get(&url).bearer_auth(token).send().await.unwrap();
@@ -69,7 +68,6 @@ pub async fn get_entities(app_slug: &str, token: String, tier_id: Uuid) -> Entit
 }
 
 pub async fn post_entity(app_slug: &str, fake_dse: Vec<DataSourceEntity>, token: String) {
-    // let hostname = config::api::dsm::connection_url();
     let url = format!("{}/v1/{}/assets", dsm_url(), app_slug);
 
     let client = reqwest::Client::new();
