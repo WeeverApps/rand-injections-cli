@@ -4,7 +4,7 @@ This is a tool developers can use to generate small or large amounts of random f
 
 # Given:
 
-None, does not need anything else running. To see the data that you created with this tool, you can see it in DB or in a local environment urls.
+NEEDS `api-odata` and `wx-data-agent` running to see it injections. To see the data that you created with this tool, you can see it in DB or in a local environment urls.
 
 # Commands:
 
