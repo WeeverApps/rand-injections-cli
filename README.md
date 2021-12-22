@@ -55,3 +55,10 @@ View list of commands - under `OPTIONS`:
    1. Shift
 1. Push each generated inspection to an array
 1. Insert whole array to inspection command for odata.
+
+# Issues
+💡 Caused by: feature `edition2021` is required consider adding `cargo-features = ["edition2021"]` to the manifest
+
+**Solution:**
+
+- Update the Rust to satisfy the new edition 2021 by running this command `rustup default nightly && rustup update`
