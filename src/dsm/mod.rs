@@ -16,10 +16,10 @@ pub async fn create_dsm(limit: i32, app_slugs: Vec<String>, token: String) {
     let mut rng = thread_rng();
     let post_delay = time::Duration::from_millis(30000);
     // Create dsm for each app
-    for app in 0..app_slugs.len() {
-        println!("APP: {:?}", app_slugs[app]);
+    for app in app_slugs {
+        println!("APP: {:?}", app);
         // Get number of tiers
-        let fetched_tiers = tier::tiers(&app_slugs[app], token.clone()).await;
+        let fetched_tiers = tier::tiers(&app, token.clone()).await;
         if fetched_tiers.tiers.len() <= 0 {
             println!("{}", "ERROR: There isn't any tiers for this app.".red());
             break;
@@ -35,7 +35,7 @@ pub async fn create_dsm(limit: i32, app_slugs: Vec<String>, token: String) {
                 status: Faker.fake::<entity::EntityStatus>(),
             };
             // post entity
-            entity::post_entity(&app_slugs[app], vec![fake_dse], token.clone()).await;
+            entity::post_entity(&app, vec![fake_dse], token.clone()).await;
         }
 
         println!(
@@ -47,24 +47,17 @@ pub async fn create_dsm(limit: i32, app_slugs: Vec<String>, token: String) {
         // Create Entities for each tiers after top tier.
         for tier in 1..fetched_tiers.tiers.len() {
             // Get entities in the tier before to set up as parents
-            let mut entities = entity::get_entities(
-                &app_slugs[app],
-                token.clone(),
-                fetched_tiers.tiers[tier - 1].id,
-            )
-            .await;
+            let mut entities =
+                entity::get_entities(&app, token.clone(), fetched_tiers.tiers[tier - 1].id).await;
             if entities.assets.len() <= 0 {
                 println!("Couldn't find any entities.");
                 // Need delay between each entity creation in a tier
                 println!("Another POST delay...(30 secs)\n");
                 thread::sleep(post_delay);
                 // Get entities in the tier before to set up as parents
-                entities = entity::get_entities(
-                    &app_slugs[app],
-                    token.clone(),
-                    fetched_tiers.tiers[tier - 1].id,
-                )
-                .await;
+                entities =
+                    entity::get_entities(&app, token.clone(), fetched_tiers.tiers[tier - 1].id)
+                        .await;
             }
             let mut fake_dse = Vec::new();
             // For every entity this tier has, randomly generate more child entities.
@@ -86,7 +79,7 @@ pub async fn create_dsm(limit: i32, app_slugs: Vec<String>, token: String) {
                 }
             }
             // post entities as an array - Should cause asset_paths -> meta_happened_at to have same times.
-            entity::post_entity(&app_slugs[app], fake_dse, token.clone()).await;
+            entity::post_entity(&app, fake_dse, token.clone()).await;
             // Need delay between each entity creation in a tier
             println!("POST delay...(30 secs)\n");
             thread::sleep(post_delay);

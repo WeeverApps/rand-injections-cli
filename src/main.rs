@@ -2,12 +2,15 @@ mod config;
 use colored::Colorize;
 use structopt::StructOpt;
 
+pub mod command;
 mod dsm;
 mod frequency;
 mod inspection_builder;
+pub mod query_stringer;
 mod running_schedule;
 mod shift;
 mod user;
+
 #[derive(Debug, StructOpt)]
 #[structopt()]
 pub struct Opt {

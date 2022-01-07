@@ -77,10 +77,10 @@ pub async fn create_inspection_builder(limit: i32, app_slugs: Vec<String>, token
     let mut rng = thread_rng();
 
     // Create dsm for each app
-    for app in 0..app_slugs.len() {
+    for app in app_slugs {
         let mut rand_num;
         // get inspection type by app
-        let fetch_inspection_types = inspection_type::fetch(&app_slugs[app], token.clone()).await;
+        let fetch_inspection_types = inspection_type::fetch(&app, token.clone()).await;
         if fetch_inspection_types.inspection_types.len() == 0 {
             println!(
                 "{}",
@@ -90,21 +90,21 @@ pub async fn create_inspection_builder(limit: i32, app_slugs: Vec<String>, token
         }
 
         // get inspection forms by app
-        let form_results = inspection_form::fetch(&app_slugs[app], token.clone()).await;
+        let form_results = inspection_form::fetch(&app, token.clone()).await;
         let inspection_forms;
         match form_results {
             Ok(v) => {
                 inspection_forms = v;
             }
             Err(e) => {
-                println!("{}", e);
+                println!("{}", e.to_string().red());
                 break;
             }
         }
 
         // get dsm by app
         // get tiers
-        let fetched_tiers = tier::tiers(&app_slugs[app], token.clone()).await;
+        let fetched_tiers = tier::tiers(&app, token.clone()).await;
         if fetched_tiers.tiers.len() <= 0 {
             println!("{}", "ERROR: There isn't any tiers for this app.".red());
             break;
@@ -112,7 +112,7 @@ pub async fn create_inspection_builder(limit: i32, app_slugs: Vec<String>, token
 
         // get lowest tier entity
         let entities = entity::get_entities(
-            &app_slugs[app],
+            &app,
             token.clone(),
             fetched_tiers.tiers[fetched_tiers.tiers.len() - 1].id,
         )
@@ -130,7 +130,7 @@ pub async fn create_inspection_builder(limit: i32, app_slugs: Vec<String>, token
         // Generate user input limit number of inspection schedules
         for _generate in 0..limit {
             // get shift by app
-            let fetched_shifts = shift::fetch(&app_slugs[app], token.clone()).await;
+            let fetched_shifts = shift::fetch(&app, token.clone()).await;
             if fetched_shifts.shifts.len() == 0 {
                 println!(
                     "{}",
@@ -166,12 +166,12 @@ pub async fn create_inspection_builder(limit: i32, app_slugs: Vec<String>, token
             let shift = &fetched_shifts.shifts[rand_num];
 
             // Randomly set a frequency
-            let frequency_unit = frequency::fetch(&app_slugs[app], token.clone()).await;
+            let frequency_unit = frequency::fetch(&app, token.clone()).await;
             rand_num = rng.gen_range(0..frequency_unit.frequency.len());
             let frequency = &frequency_unit.frequency[rand_num];
 
             // Randomly set an Assignee
-            let assignees = user::fetch(&app_slugs[app], token.clone()).await;
+            let assignees = user::fetch(&app, token.clone()).await;
             rand_num = rng.gen_range(0..assignees.users.len());
             let assignee_id = assignees.users[rand_num].id;
 
@@ -184,9 +184,9 @@ pub async fn create_inspection_builder(limit: i32, app_slugs: Vec<String>, token
             // Convert Faker random start date to naive date.
             let from_ymd = NaiveDate::from_ymd;
             let date = from_ymd(start_date.year(), start_date.month(), start_date.day());
-            
+
             let mut frequency_day = None;
-            // Checks if the randomly selected frequency is Weekly to set day of the week only for it.
+            // We only need to set day of the week if frequency id is the week id.
             if frequency.id.to_string() == "9cca00be-caae-11eb-b286-87d80d211b78" {
                 frequency_day = Some(Faker.fake::<DayOfWeek>());
             }
@@ -210,7 +210,7 @@ pub async fn create_inspection_builder(limit: i32, app_slugs: Vec<String>, token
         println!("Created {} schedules", limit);
         inspections_command::service(
             token.clone(),
-            app_slugs[app].clone(),
+            app.clone(),
             "CreateSchedule".into(),
             fake_schedule,
         )

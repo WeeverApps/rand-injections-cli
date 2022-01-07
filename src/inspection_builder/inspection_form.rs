@@ -126,7 +126,10 @@ pub async fn fetch(app_slug: &str, token: String) -> Result<Vec<Form>, Error> {
     if response.status().is_success() {
         Ok(response.json::<Vec<Form>>().await.unwrap())
     } else {
-        Err(eyre!("ERROR: Form fetch was unsuccessful"))
+        Err(eyre!(
+            "ERROR - {}: Form fetch was unsuccessful",
+            response.status()
+        ))
     }
 }
 
