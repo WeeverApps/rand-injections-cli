@@ -43,7 +43,6 @@ pub async fn fetch(
     end_date: NaiveDate,
 ) -> Result<RouteResponse, Error> {
     let query_string: &str = &format!("dateFrom={}&dateTo={}", start_date, end_date);
-    println!("QUERY: {:?}", query_string);
     let params: QueryParams = query_stringer::parse_encoded_qs(&query_string);
     let encoded_query_string = query_stringer::to_encoded_qs(&params);
     let url = format!(
@@ -52,7 +51,6 @@ pub async fn fetch(
         app_slug,
         encoded_query_string
     );
-    println!("DOWNTIME URL: {:?}", url);
     let client = reqwest::Client::new();
     let response = client.get(&url).bearer_auth(token).send().await.unwrap();
     if response.status().is_success() {

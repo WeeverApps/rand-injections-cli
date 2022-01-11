@@ -1,5 +1,5 @@
 use super::dsm::{entity, tier};
-use super::shift::shift;
+use super::shift;
 
 use colored::Colorize;
 extern crate rand;
@@ -23,35 +23,41 @@ pub enum DowntimeType {
     CancelDowntime,
     ScheduleDowntime,
 }
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
+pub struct CancelDowntimeCommand {
+    start_date: NaiveDate,
+    end_date: NaiveDate,
+    start_time: NaiveTime,
+    end_time: NaiveTime,
+    shifts: Vec<shift::ShiftIdentifier>,
+    assets: Vec<shift::AssetIdentifier>,
+    note: Option<String>,
+}
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
+pub struct ScheduleDowntimeCommand {
+    start_date: NaiveDate,
+    end_date: NaiveDate,
+    start_time: NaiveTime,
+    end_time: NaiveTime,
+    shifts: Vec<shift::ShiftIdentifier>,
+    assets: Vec<shift::AssetIdentifier>,
+    note: Option<String>,
+}
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 pub enum DowntimeCommand {
-    CancelDowntime {
-        start_date: NaiveDate,
-        end_date: NaiveDate,
-        start_time: NaiveTime,
-        end_time: NaiveTime,
-        shifts: Vec<Uuid>,
-        assets: Vec<Uuid>,
-        note: Option<String>,
-    },
-    ScheduleDowntime {
-        start_date: NaiveDate,
-        end_date: NaiveDate,
-        start_time: NaiveTime,
-        end_time: NaiveTime,
-        shifts: Vec<Uuid>,
-        assets: Vec<Uuid>,
-        note: Option<String>,
-    },
+    CancelDowntime(CancelDowntimeCommand),
+    ScheduleDowntime(ScheduleDowntimeCommand),
 }
 
-#[derive(Clone, Copy, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct Runtime {
     time_type: RuntimeType,
     date: NaiveDate,
     shift_id: Uuid,
+    shift_name: String,
     asset_id: Uuid,
+    asset_name: String,
 }
 
 #[derive(Clone, Copy, PartialEq, Debug, Dummy)]
@@ -129,7 +135,6 @@ pub async fn random_schedule(_limit: i32, app_slugs: Vec<String>, token: String)
             DateRangeType::Custom => {
                 // Note: Custom has a restriction to only move 24 days in the past and 6 days into the future in the front end. Does this error out in the backend properly if we send random dates?
                 let start_datetime: chrono::DateTime<Utc> = DateTime().fake();
-                println!("start_datetime: {:?}", start_datetime);
 
                 let end_datetime: chrono::DateTime<Utc> = DateTimeAfter(start_datetime).fake();
                 // Change date format to naive date.
@@ -138,13 +143,11 @@ pub async fn random_schedule(_limit: i32, app_slugs: Vec<String>, token: String)
                     end_datetime.month(),
                     end_datetime.day(),
                 );
-                println!("TEST END: {:?}", end_date);
                 start_date = from_ymd(
                     start_datetime.year(),
                     start_datetime.month(),
                     start_datetime.day(),
                 );
-                println!("start_date: {:?}", start_date);
             }
             _ => {}
         }
@@ -166,7 +169,7 @@ pub async fn random_schedule(_limit: i32, app_slugs: Vec<String>, token: String)
             }
         }
 
-        let fetched_shifts = shift::fetch(&app, token.clone()).await;
+        let fetched_shifts = shift::shift::fetch(&app, token.clone()).await;
         if fetched_shifts.shifts.len() == 0 {
             println!(
                 "{}",
@@ -192,10 +195,6 @@ pub async fn random_schedule(_limit: i32, app_slugs: Vec<String>, token: String)
             break;
         }
 
-        println!("DATE INTERVAL {:?}", date_interval.len());
-        println!("ENTITY {:?}", fetched_entities.assets.len());
-        println!("SHIFT {:?}", fetched_shifts.shifts.len());
-
         // for every date range * shift * lowest tier dsm is the number of downtime/runtime
         let mut runtime: Vec<Runtime> = Vec::new();
         let mut rand_runtime: Vec<Runtime> = Vec::new();
@@ -209,7 +208,9 @@ pub async fn random_schedule(_limit: i32, app_slugs: Vec<String>, token: String)
                         time_type: Faker.fake::<RuntimeType>(),
                         date: *date,
                         shift_id: shift.id,
+                        shift_name: shift.name.clone(),
                         asset_id: entity.id,
+                        asset_name: entity.name.clone(),
                     });
                     if (&downtimes).into_iter().any(|value| {
                         value.asset_id == entity.id
@@ -220,14 +221,18 @@ pub async fn random_schedule(_limit: i32, app_slugs: Vec<String>, token: String)
                             time_type: RuntimeType::Down,
                             date: *date,
                             shift_id: shift.id,
+                            shift_name: shift.name.clone(),
                             asset_id: entity.id,
+                            asset_name: entity.name.clone(),
                         });
                     } else {
                         runtime.push(Runtime {
                             time_type: RuntimeType::Run,
                             date: *date,
                             shift_id: shift.id,
+                            shift_name: shift.name.clone(),
                             asset_id: entity.id,
+                            asset_name: entity.name.clone(),
                         });
                     }
                 }
@@ -237,50 +242,52 @@ pub async fn random_schedule(_limit: i32, app_slugs: Vec<String>, token: String)
         let mut save_runtime: Vec<Runtime> = Vec::new();
         let mut downtime_changes: Vec<DowntimeCommand> = Vec::new();
         // Loop and Compare original runtime vec with randomized copy of runtime.
-        println!("RUNTIME: {:?}", runtime.len());
         for x in 0..runtime.len() {
-            println!(
-                "{} CHECK ------ OG: {:?} RAND: {:?}",
-                x, runtime[x].time_type, rand_runtime[x].time_type
-            );
-
             //  create downtime command if the current type is different than the 1st saved type, push into a vec, and reset saved data
             if save_runtime.len() > 0 && save_runtime[0].time_type != rand_runtime[x].time_type {
-                println!("SAVE RUNTIME VEC: {:?}", save_runtime);
-                let mut shifts: Vec<Uuid> = Vec::new();
-                let mut entities: Vec<Uuid> = Vec::new();
+                let mut shifts: Vec<shift::ShiftIdentifier> = Vec::new();
+                let mut entities: Vec<shift::AssetIdentifier> = Vec::new();
                 save_runtime.iter().for_each(|value| {
-                    shifts.push(value.shift_id);
-                    entities.push(value.asset_id);
+                    shifts.push(shift::ShiftIdentifier {
+                        id: value.shift_id,
+                        name: value.shift_name.clone(),
+                    });
+                    entities.push(shift::AssetIdentifier {
+                        id: value.asset_id,
+                        name: value.asset_name.clone(),
+                    });
                 });
 
                 // Create command for all the similar runtime types changes
                 match save_runtime[0].time_type {
-                    RuntimeType::Run => downtime_changes.push(DowntimeCommand::CancelDowntime {
-                        start_date: save_runtime[0].date,
-                        end_date: save_runtime[save_runtime.len() - 1].date,
-                        start_time: NaiveTime::from_hms(0, 0, 0),
-                        end_time: NaiveTime::from_hms(0, 0, 0),
-                        shifts: shifts,
-                        assets: entities,
-                        note: Paragraph(3..5).fake(),
-                    }),
-                    RuntimeType::Down => downtime_changes.push(DowntimeCommand::ScheduleDowntime {
-                        start_date: save_runtime[0].date,
-                        end_date: save_runtime[save_runtime.len() - 1].date,
-                        start_time: NaiveTime::from_hms(0, 0, 0),
-                        end_time: NaiveTime::from_hms(0, 0, 0),
-                        shifts: shifts,
-                        assets: entities,
-                        note: Paragraph(3..5).fake(),
-                    }),
+                    RuntimeType::Run => downtime_changes.push(DowntimeCommand::CancelDowntime(
+                        CancelDowntimeCommand {
+                            start_date: save_runtime[0].date,
+                            end_date: save_runtime[save_runtime.len() - 1].date,
+                            start_time: NaiveTime::from_hms(0, 0, 0),
+                            end_time: NaiveTime::from_hms(0, 0, 0),
+                            shifts: shifts,
+                            assets: entities,
+                            note: Paragraph(3..5).fake(),
+                        },
+                    )),
+                    RuntimeType::Down => downtime_changes.push(DowntimeCommand::ScheduleDowntime(
+                        ScheduleDowntimeCommand {
+                            start_date: save_runtime[0].date,
+                            end_date: save_runtime[save_runtime.len() - 1].date,
+                            start_time: NaiveTime::from_hms(0, 0, 0),
+                            end_time: NaiveTime::from_hms(0, 0, 0),
+                            shifts: shifts,
+                            assets: entities,
+                            note: Paragraph(3..5).fake(),
+                        },
+                    )),
                 }
 
                 save_runtime = Vec::new();
             }
-            save_runtime.push(rand_runtime[x]);
+            save_runtime.push(rand_runtime[x].clone());
         }
-        println!("DOWNTIME CHANGES: {:?}", downtime_changes);
 
         // POST commands
         command::commands::post(

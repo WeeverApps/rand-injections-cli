@@ -46,7 +46,7 @@ pub struct EntityRecord {
     tier_id: Uuid,
     parent_id: Option<Uuid>,
     pub id: Uuid,
-    name: String,
+    pub name: String,
     note: Option<String>,
     status: EntityStatus,
     created_at: DateTime<Utc>,
