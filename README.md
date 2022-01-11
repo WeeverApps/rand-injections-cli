@@ -20,12 +20,14 @@ View list of commands - under `OPTIONS`:
 `./target/debug/mock_injections -a "qa-inspections-manager" --dsm-limit 5`
 
 - Single app slug
-  `cargo run -- -a "qa-inspections-manager" --dsm-limit 15`
-  `cargo run --  -a "qa-inspections-manager"  --ib-limit 10` 
-  
+  - `cargo run -- -a "qa-inspections-manager" --dsm-limit 15` OR `cargo run -- -a "qa-inspections-manager" --d 15`
+  - `cargo run -- -a "qa-inspections-manager" --ib-limit 10` OR `cargo run -- -a "qa-inspections-manager" --i 10`
 - Multiple app slugs
-  `cargo run -- -a "mars-vic" "mars-ark" --dsm-limit 10`
- 
+
+  - `cargo run -- -a "mars-vic" "mars-ark" --dsm-limit 10`
+
+- Running Schedule Scramble
+  - `cargo run -- -a "qa-inspections-manager" --random-rs true`
 
 # Code description
 
@@ -57,8 +59,17 @@ View list of commands - under `OPTIONS`:
 1. Insert whole array to inspection command for odata.
 
 # Issues
+
 💡 Caused by: feature `edition2021` is required consider adding `cargo-features = ["edition2021"]` to the manifest
 
 **Solution:**
 
 - Update the Rust to satisfy the new edition 2021 by running this command `rustup default nightly && rustup update`
+
+💡 `ERROR: There isn't any tiers for this app` but there are tiers for this app
+
+**Possible Solution:**
+_unconsistent fix_
+
+- Fetch/pull main branch for wx-data-agent and api-odata and ensure that it's connected properly.
+- Ensure lagoon.dsm.tiers table has meta_event_id that isn't 0. If it does then rebuild database.

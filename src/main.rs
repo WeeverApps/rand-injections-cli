@@ -18,14 +18,14 @@ pub struct Opt {
     #[structopt(short, long = "app-slug", name = "slug")]
     app_slugs: Vec<String>,
     /// Number data source that will be injected. Number needs to be bigger than 1.
-    #[structopt(short = "dsm-limit", long, name = "dl")]
+    #[structopt(short = "dsm-limit", long, name = "data sourse limit")]
     dsm_limit: Option<i32>,
     /// Number inspection builder items that will be injected. Number needs to be bigger than 1.
-    #[structopt(short = "ib-limit", long, name = "ibl")]
+    #[structopt(short = "ib-limit", long, name = "inspection builder limit")]
     ib_limit: Option<i32>,
-    /// Number running schedule items that will be scrambled. Number needs to be bigger than 1.
-    #[structopt(short = "rs-limit", long, name = "rsl")]
-    rs_limit: Option<i32>,
+    /// Randomize running schedule. Set to true to use, default is false.
+    #[structopt(short = "random-rs", long, name = "rsl")]
+    random_rs: Option<bool>,
 }
 
 async fn process(opt: &Opt, token: String) {
@@ -69,23 +69,13 @@ async fn process(opt: &Opt, token: String) {
         }
         None => {}
     }
-    // Set scramble limit for running schedule.
-    match opt.rs_limit {
-        Some(val) => {
-            if val > 1 {
-                running_schedule::random_schedule(
-                    opt.rs_limit.unwrap(),
-                    opt.app_slugs.clone(),
-                    token.clone(),
-                )
-                .await;
-            } else {
-                println!(
-                    "{}",
-                    "Invalid running schedule limit. Will default to 10".yellow()
-                );
-                running_schedule::random_schedule(10, opt.app_slugs.clone(), token.clone()).await;
-            }
+    // Scramble for running schedule.
+    match opt.random_rs {
+        Some(true) => {
+            running_schedule::random_schedule(opt.app_slugs.clone(), token.clone()).await;
+        }
+        Some(false) => {
+            println!("{}", "No changes made for running schedule.".yellow());
         }
         None => {}
     }

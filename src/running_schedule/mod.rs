@@ -4,12 +4,9 @@ use super::shift;
 use colored::Colorize;
 extern crate rand;
 use fake::faker::lorem::en::Paragraph;
-use rand::thread_rng;
-// use rand::Rng;
 use std::mem;
 pub mod downtime;
 use crate::command;
-// use crate::command::commands;
 use chrono::{Datelike, Duration, NaiveDate, NaiveTime, Utc};
 use derive_more::Display;
 use fake::faker::chrono::en::{DateTime, DateTimeAfter};
@@ -92,24 +89,15 @@ impl Iterator for DateRange {
     }
 }
 
-pub async fn random_schedule(_limit: i32, app_slugs: Vec<String>, token: String) {
-    // Random number generator
-    let mut _rng = thread_rng();
-
-    // Scramble running schedule
+pub async fn random_schedule(app_slugs: Vec<String>, token: String) {
     for app in app_slugs {
-        // let mut rand_num;
-
-        // randomize cancellation and scheduled downtime.
-        // check if downtime is cancelled or not.
-
+        println!("Randomizing running schedules for {}...", app);
         // let rand_date_range = Faker.fake::<DateRangeType>();
-        let rand_date_range = DateRangeType::Yesterday;
+        let rand_date_range = DateRangeType::Last30Days;
         let from_ymd = NaiveDate::from_ymd;
         let today: chrono::DateTime<Utc> = Utc::now();
         let mut start_date = from_ymd(today.year(), today.month(), today.day());
         let mut end_date = from_ymd(today.year(), today.month(), today.day());
-        println!("date range: {:?}", rand_date_range);
 
         match rand_date_range {
             DateRangeType::Last30Days => {
@@ -153,14 +141,16 @@ pub async fn random_schedule(_limit: i32, app_slugs: Vec<String>, token: String)
         }
         // map out each date in date range into DateTime[]
         let date_interval: Vec<NaiveDate> = DateRange(start_date, end_date).collect();
-
+        // println!("", rand_date_range);
+        println!(
+            "Date Range: {:?} -> {} to {}",
+            rand_date_range, start_date, end_date
+        );
         // Get downtime
         let fetched_downtime = downtime::fetch(&app, token.clone(), start_date, end_date).await;
         let downtimes;
         match fetched_downtime {
             Ok(v) => {
-                // println!("DOWNTIME: {:?}", v);
-                println!("LENGTH:: {:?}", v.downtimes.len());
                 downtimes = v.downtimes;
             }
             Err(e) => {
@@ -288,7 +278,7 @@ pub async fn random_schedule(_limit: i32, app_slugs: Vec<String>, token: String)
             }
             save_runtime.push(rand_runtime[x].clone());
         }
-
+        println!("command lenght: {:?}", downtime_changes.len());
         // POST commands
         command::commands::post(
             &app,
