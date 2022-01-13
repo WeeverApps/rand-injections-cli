@@ -58,6 +58,17 @@ View list of commands - under `OPTIONS`:
 1. Push each generated inspection to an array
 1. Insert whole array to inspection command for odata.
 
+## Running Schedule injections:
+
+1. For each app mentions it gets,
+1. Selects random Date Range
+1. GET shifts for app
+1. GET tiers for app to know lowest tier
+1. GET lowest tier entities
+1. Collect and generate random runtime changes from the number of date ranges, shifts, and lowest tier entities
+1. Collect all similar random runtime types to create a vector of CancelDowntimeCommand and/or ScheduleDowntimeCommand
+1. POST commands
+
 # Issues
 
 💡 Caused by: feature `edition2021` is required consider adding `cargo-features = ["edition2021"]` to the manifest
@@ -66,10 +77,12 @@ View list of commands - under `OPTIONS`:
 
 - Update the Rust to satisfy the new edition 2021 by running this command `rustup default nightly && rustup update`
 
-💡 `ERROR: There isn't any tiers for this app` but there are tiers for this app
+💡 `ERROR: There isn't any tiers for this app` but there are tiers for this app OR any fetching issues.
 
 **Possible Solution:**
 _unconsistent fix_
 
-- Fetch/pull main branch for wx-data-agent and api-odata and ensure that it's connected properly.
-- Ensure lagoon.dsm.tiers table has meta_event_id that isn't 0. If it does then rebuild database.
+- Fetch/pull main branch for wx-data-agent and api-odata and ensure that it's connected properly then try command again.
+- Ensure lagoon.dsm.tiers table has meta_event_id that isn't 0. If it does then rebuild database then try command again.
+- Open this repo on a text edit and resave. No changes need to be made then try command again.
+- Run `Cargo build` then try command again.
