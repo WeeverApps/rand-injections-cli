@@ -86,3 +86,8 @@ _unconsistent fix_
 - Ensure lagoon.dsm.tiers table has meta_event_id that isn't 0. If it does then rebuild database then try command again.
 - Open this repo on a text edit and resave. No changes need to be made then try command again.
 - Run `Cargo build` then try command again.
+
+💡 `ERROR - 400 Bad Request: Command post was unsuccessful.` from running schedule injections
+
+- This is likely because we are sending too many commands since the limit is 10,000. This will frequently happen for Custom data range since it random pick 2 dates or if you rand DSM injection and created many low tier entities.
+- There is no solutions other than to redo the command to have it pick different date ranges or to rebuild your dsm have less lowest tier entities.

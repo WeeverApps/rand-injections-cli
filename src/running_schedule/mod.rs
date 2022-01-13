@@ -19,6 +19,7 @@ pub enum DowntimeType {
     CancelDowntime,
     ScheduleDowntime,
 }
+// Although CancelDowntimeCommand is the same struct as ScheduledDowntimeCommand we need to have 2 different structs to fit the model odata has for commands.
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 pub struct CancelDowntimeCommand {
     start_date: NaiveDate,
