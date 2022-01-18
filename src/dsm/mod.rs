@@ -42,6 +42,7 @@ pub async fn create_dsm(limit: i32, app_slugs: Vec<String>, token: String) {
             "CREATING {:?} entities for top tier...(30 secs)",
             rand_num_asset
         );
+        // We need to wait a moment for the post to process since we're fetch these creations right after.
         thread::sleep(post_delay);
 
         // Create Entities for each tiers after top tier.
@@ -53,6 +54,7 @@ pub async fn create_dsm(limit: i32, app_slugs: Vec<String>, token: String) {
                 println!("Couldn't find any entities.");
                 // Need delay between each entity creation in a tier
                 println!("Another POST delay...(30 secs)\n");
+                // We need to wait a moment for the post to process since we're fetch these creations right after.
                 thread::sleep(post_delay);
                 // Get entities in the tier before to set up as parents
                 entities =
@@ -82,6 +84,7 @@ pub async fn create_dsm(limit: i32, app_slugs: Vec<String>, token: String) {
             entity::post_entity(&app, fake_dse, token.clone()).await;
             // Need delay between each entity creation in a tier
             println!("POST delay...(30 secs)\n");
+            // We need to wait a moment for the post to process since we're fetch these creations right after.
             thread::sleep(post_delay);
         }
     }

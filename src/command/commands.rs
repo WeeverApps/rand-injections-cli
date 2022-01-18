@@ -19,6 +19,7 @@ pub struct CommandResponse {
 
 pub async fn post(app_slug: &str, token: String, command: InspectionsCommandRequest) {
     let hostname = inspections_v2_url();
+
     let url = format!("{}/{}/command", hostname, app_slug);
 
     let client = reqwest::Client::new();
@@ -30,7 +31,10 @@ pub async fn post(app_slug: &str, token: String, command: InspectionsCommandRequ
         .await
         .unwrap();
 
-    if !response.status().is_success() {
+    if response.status().is_success() {
+        println!("Command Randomized {} item(s).", command.commands.len());
+        println!("{}", "POST Command was successful!".green());
+    } else {
         let error: &str = &format!(
             "ERROR - {}: Command post was unsuccessful.",
             response.status()
